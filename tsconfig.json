@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "declaration": true,
+    "noImplicitAny": false,
+    "removeComments": true,
+    "noLib": false,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "target": "es6",
+    "module": "esnext",
+    "esModuleInterop": true,
+
+    "moduleResolution": "node",
+    "baseUrl": ".",
+    "paths": {
+      "~/src/*": ["src/*"]
+    },
+
+    "strictNullChecks": false,
+    "sourceMap": true,
+    "lib": ["es2015", "es2017.sharedmemory", "esnext.asynciterable", "es2017"],
+    
+    "rootDir": "./src"
+  },
+  "exclude": ["node_modules"],
+  "parcelTsPluginOptions": {
+    "transpileOnly": false
+  }
+}
