@@ -1,14 +1,14 @@
 import { Readable, Writable } from 'stream'
 
 export class ReadableBuffer extends Readable {
-  constructor(buffer: Buffer) {
-    super()
+  constructor(buffer: Buffer | string) {
+    super({ read: () => {} })
 
-    this.push(buffer)
-    this.push(null)
+    const content = typeof buffer === 'string' ? Buffer.from(buffer) : buffer
+
+    this.push(content)
+    setTimeout(() => this.push(null), 0)
   }
-
-  _read() {}
 }
 
 export class WritableBuffer extends Writable {

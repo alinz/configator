@@ -80,13 +80,17 @@ describe('ast test', () => {
 
   test('createConfig', () => {
     const obj = {
-      builtin: {
-        features: {
-          name: 'builtin.features',
-          description:
-            'Indicates the builtin features for this build of librdkafka. An application can either query this value or attempt to set it with its list of required features to check for library support.',
-          defaultValue: 'gzip, snappy, ssl, sasl, regex, lz4, sasl_gssapi, sasl_plain, sasl_scram, plugins',
-          type: 'string',
+      a: {
+        b: {
+          c: { property: 'a.b.c', description: 'awesome value1', type: 'range', range: { type: 'number', min: 1, max: 10 }, default: 5 },
+          d: { property: 'a.b.d', description: 'awesome value2', type: 'range', range: { type: 'single', values: ['a', 'b', 'c'] }, default: 'b' },
+          e: {
+            property: 'a.b.e',
+            description: 'awesome value3',
+            type: 'multi',
+            range: { type: 'multiple', values: ['a', 'b', 'c'] },
+            default: 'b,a',
+          },
         },
       },
     }
@@ -95,12 +99,18 @@ describe('ast test', () => {
 config = (conf: {
     [key: string]: any;
 }) => {
-    const update = { builtin: { features: (val: any) => {
-                conf["builtin.features"] = val;
-                return update;
-            } } };
+    const update = { a: { b: { c: (val: any) => {
+                    conf["a.b.c"] = val;
+                    return update;
+                }, d: (val: any) => {
+                    conf["a.b.d"] = val;
+                    return update;
+                }, e: (val: any) => {
+                    conf["a.b.e"] = val;
+                    return update;
+                } } } };
     return update;
-}    
+}
     `
 
     const value = ast.createConfig(obj)
@@ -109,13 +119,17 @@ config = (conf: {
 
   test('createSource', () => {
     const obj = {
-      builtin: {
-        features: {
-          name: 'builtin.features',
-          description:
-            'Indicates the builtin features for this build of librdkafka. An application can either query this value or attempt to set it with its list of required features to check for library support.',
-          defaultValue: 'gzip, snappy, ssl, sasl, regex, lz4, sasl_gssapi, sasl_plain, sasl_scram, plugins',
-          type: 'string',
+      a: {
+        b: {
+          c: { property: 'a.b.c', description: 'awesome value1', type: 'range', range: { type: 'number', min: 1, max: 10 }, default: 5 },
+          d: { property: 'a.b.d', description: 'awesome value2', type: 'range', range: { type: 'single', values: ['a', 'b', 'c'] }, default: 'b' },
+          e: {
+            property: 'a.b.e',
+            description: 'awesome value3',
+            type: 'multi',
+            range: { type: 'multiple', values: ['a', 'b', 'c'] },
+            default: 'b,a',
+          },
         },
       },
     }

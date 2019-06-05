@@ -80,21 +80,16 @@ export const createExport = (declaration: ts.VariableDeclaration) => {
 }
 
 export const isLeaf = (obj: any): boolean => {
-  return Object.keys(obj).length == 4 && 'name' in obj && 'description' in obj && 'defaultValue' in obj && 'type' in obj
+  return Object.keys(obj).length == 5 && 'property' in obj && 'description' in obj && 'type' in obj && 'range' in obj && 'default' in obj
 }
 
-export const createObjectUpdate = (
-  obj: any,
-  list: ts.ObjectLiteralElementLike[] = [],
-): ts.ObjectLiteralElementLike[] => {
+export const createObjectUpdate = (obj: any, list: ts.ObjectLiteralElementLike[] = []): ts.ObjectLiteralElementLike[] => {
   Object.keys(obj).forEach((key: string) => {
     const val = obj[key]
     list.push(
       ts.createPropertyAssignment(
         ts.createIdentifier(key),
-        isLeaf(val)
-          ? createSetterFunc('conf', val.name, 'update')
-          : ts.createObjectLiteral(createObjectUpdate(val, []), false),
+        isLeaf(val) ? createSetterFunc('conf', val.property, 'update') : ts.createObjectLiteral(createObjectUpdate(val, []), false),
       ),
     )
   })
@@ -153,13 +148,7 @@ export const createConfig = (obj: any) => {
           ts.createVariableStatement(
             undefined,
             ts.createVariableDeclarationList(
-              [
-                ts.createVariableDeclaration(
-                  ts.createIdentifier('update'),
-                  undefined,
-                  ts.createObjectLiteral(createObjectUpdate(obj), false),
-                ),
-              ],
+              [ts.createVariableDeclaration(ts.createIdentifier('update'), undefined, ts.createObjectLiteral(createObjectUpdate(obj), false))],
               ts.NodeFlags.Const,
             ),
           ),

@@ -1,29 +1,58 @@
-import { createReadStream } from 'fs'
+import { createReadStream, createWriteStream } from 'fs'
+import { Readable } from 'stream'
 
+import { asyncWrite } from '~/src/pkg/io'
 import { parse as tableParse } from '~/src/table-reader'
 import * as ast from './ast'
 
 interface RangeNumber {
+  type: 'number'
   min: number
   max: number
 }
 
 interface RangeValue {
   type: 'single' | 'multiple'
-  values: string
+  values: string[]
 }
+
+type ConfigItemType = 'boolean' | 'number' | 'function' | 'string' | 'range' | 'multi'
 
 interface ConfigItem {
   property: string
-  type: 'boolean' | 'number' | 'function' | 'string' | 'range'
-  range: RangeNumber | RangeValue
-  default: string
+  type: ConfigItemType
+  range: RangeNumber | RangeValue | null
+  default: any
   description: string
 }
 
+const isTypeCorrect = (type: string): boolean => {
+  return ['boolean', 'number', 'function', 'string', 'range', 'multi'].indexOf(type) !== -1
+}
+
+const parseRange = (value: string): RangeNumber | RangeValue => {
+  if (value.indexOf('..') !== -1) {
+    const [min, max] = value.split('..')
+    return {
+      type: 'number',
+      min: Number(min),
+      max: Number(max),
+    }
+  } else {
+    const values = value.split(',')
+    return {
+      type: 'single',
+      values,
+    }
+  }
+}
+
+const removeQuotes = (value: string) => {
+  return value.replace(/^"(.+)"$/, '$1')
+}
+
 // phase 1 read the markdown table and convert it into clean and normalized json object
-const phase1 = async (filename) => {
-  const input = createReadStream(filename)
+export const phase1 = async (input: Readable) => {
   const parsed = await tableParse(input)
 
   // Property
@@ -31,70 +60,65 @@ const phase1 = async (filename) => {
   // Range
   // Default
   // Description
-  const json = parsed.data.reduce((base, item) => {
-    const name = item.Property
+  const json = parsed.data.reduce(
+    (base, item) => {
+      // make all the properties of config item lowercase
+      const configItem: ConfigItem = {} as any
 
-    const defaultValue = item.Default
-    let type
-    if (defaultValue === 'false' || defaultValue == 'true') {
-      type = 'boolean'
-    } else if (defaultValue === '') {
-      switch (name) {
-        case 'bootstrap.servers':
-        case 'metadata.broker.list':
-        case 'topic.blacklist':
-        case 'debug':
-        case 'compression.type':
-          type = 'string'
-          break
-        case 'max.in.flight':
-        case 'acks':
-          type = 'number'
-          break
-        case 'enable.auto.commit':
-          type = 'boolean'
-          break
-        default:
-          type = 'Function'
+      // check if type is correct
+      if (!isTypeCorrect(item.Type)) {
+        throw new Error(`unknown type ${item.Type}`)
       }
-    } else {
-      const val = Number(defaultValue)
-      if (isNaN(val)) {
-        type = 'string'
-      } else {
-        type = 'number'
+
+      configItem.property = item.Property
+      configItem.description = item.Description
+      configItem.type = item.Type as ConfigItemType
+
+      switch (configItem.type) {
+        case 'range':
+          configItem.range = parseRange(removeQuotes(item.Range))
+          if (configItem.range.type === 'number') {
+            configItem.default = Number(item.Default)
+          } else {
+            configItem.default = item.Default
+          }
+          break
+        case 'multi':
+          configItem.range = { type: 'multiple', values: removeQuotes(item.Range).split(',') }
+          configItem.default = removeQuotes(item.Default)
+          break
+        case 'boolean':
+          configItem.default = item.Default === 'true'
+          break
+        case 'number':
+          if (item.Default !== '') {
+            configItem.default = Number(item.Default)
+          }
+          break
+        case 'string':
+          configItem.default = item.Default
+          configItem.range = null
       }
-    }
 
-    const description = item.Description || ''
-
-    base[name] = {
-      name: name,
-      description: description.trim(),
-      defaultValue: defaultValue.trim(),
-      type: type,
-    }
-
-    return base
-  }, {})
+      base[item.Property] = configItem as any
+      return base
+    },
+    {} as { [key: string]: ConfigItem },
+  )
 
   return json
 }
 
 // generate base config file
-const phase1_1 = (filename) => {
-  const p1 = phase1(filename)
-
-  const original = Object.keys(p1).reduce((base: { [key: string]: any }, key: string) => {
-    if (p1[key].defaultValue !== '') {
-      base[key] = p1[key].defaultValue
+export const generateBaseConfig = (base: { [key: string]: ConfigItem }) => {
+  return Object.keys(base).reduce((baseConfig: { [key: string]: any }, key: string) => {
+    if (base[key].default !== '') {
+      baseConfig[key] = base[key].default
     } else {
-      p1[key].defaultValue = undefined
+      baseConfig[key].default = undefined
     }
-    return base
+    return baseConfig
   }, {})
-
-  return [p1, original]
 }
 
 // phase2 create a nested object, we need this transformation for
@@ -127,18 +151,16 @@ const phase1_1 = (filename) => {
       }
     }
 */
-const phase2 = (filename) => {
-  const [p1, original] = phase1_1(filename)
-
+export const expandConfigItem = (map: { [key: string]: ConfigItem }) => {
   const p2 = {}
-  Object.keys(p1).forEach((originalName) => {
+  Object.keys(map).forEach((originalName) => {
     let target = p2
     // originalName
     const segments = originalName.split('.')
     segments.forEach((segment, i) => {
       if (!target[segment]) {
         if (i == segments.length - 1) {
-          target[segment] = p1[originalName]
+          target[segment] = map[originalName]
           return
         } else {
           target[segment] = {}
@@ -148,7 +170,7 @@ const phase2 = (filename) => {
     })
   })
 
-  return [p2, original]
+  return p2
 }
 
 /* 
@@ -202,8 +224,14 @@ const phase2 = (filename) => {
       a.b.d("hahaha")
 
 */
-const phase3 = (filename) => {
-  const [obj, original] = phase2(filename)
-  const content = ast.exec(obj, original)
-  console.log(content)
+export const convert = async (tablePath: string, tsPath: string) => {
+  const table = createReadStream(tablePath)
+  const ts = createWriteStream(tsPath)
+
+  const configItemMap = await phase1(table)
+  const baseConfig = generateBaseConfig(configItemMap)
+  const sourceCode = ast.exec(configItemMap, baseConfig)
+
+  await asyncWrite(sourceCode, ts)
+  ts.close()
 }

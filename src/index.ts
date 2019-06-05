@@ -2,6 +2,7 @@ import program from 'commander'
 
 import { convert as tableToCSV } from '~/src/table-to-csv'
 import { convert as csvToTable } from '~/src/csv-to-table'
+import { convert as tableToTypescript } from '~/src/table-to-typescript'
 
 const onlyOne = (...args: boolean[]) => {
   const count = args.reduce((count, arg) => {
@@ -40,6 +41,7 @@ const main = async () => {
   }
   // convert table to typescript
   else if (typescript) {
+    await tableToTypescript(input, output)
   }
   // the last line should never happen
   else {
