@@ -27,8 +27,8 @@ const main = async () => {
 
   const { input, output, csv, table, typescript } = program
 
-  if (!onlyOne()) {
-    throw new Error('provide oen of --csv, --table or --typescript')
+  if (!onlyOne(csv, table, typescript)) {
+    throw new Error('provide one of --csv, --table or --typescript')
   }
 
   // convert table to csv

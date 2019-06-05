@@ -2,6 +2,7 @@ import { createReadStream, createWriteStream } from 'fs'
 import { Readable } from 'stream'
 
 import { asyncWrite } from '~/src/pkg/io'
+import { removeQuotes } from '~/src/pkg/strings'
 import { parse as tableParse } from '~/src/table-reader'
 import * as ast from './ast'
 
@@ -45,10 +46,6 @@ const parseRange = (value: string): RangeNumber | RangeValue => {
       values,
     }
   }
-}
-
-const removeQuotes = (value: string) => {
-  return value.replace(/^"(.+)"$/, '$1')
 }
 
 // phase 1 read the markdown table and convert it into clean and normalized json object
@@ -113,7 +110,7 @@ export const phase1 = async (input: Readable) => {
 export const generateBaseConfig = (base: { [key: string]: ConfigItem }) => {
   return Object.keys(base).reduce((baseConfig: { [key: string]: any }, key: string) => {
     if (base[key].default !== '') {
-      baseConfig[key] = base[key].default
+      baseConfig[key] = typeof base[key].default === 'string' ? removeQuotes(base[key].default) : base[key].default
     } else {
       baseConfig[key].default = undefined
     }
@@ -229,8 +226,9 @@ export const convert = async (tablePath: string, tsPath: string) => {
   const ts = createWriteStream(tsPath)
 
   const configItemMap = await phase1(table)
+  const expandedConfigItemMap = expandConfigItem(configItemMap)
   const baseConfig = generateBaseConfig(configItemMap)
-  const sourceCode = ast.exec(configItemMap, baseConfig)
+  const sourceCode = ast.exec(expandedConfigItemMap, baseConfig)
 
   await asyncWrite(sourceCode, ts)
   ts.close()
