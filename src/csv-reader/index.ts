@@ -1,6 +1,7 @@
 import { Readable } from 'stream'
 import { Tokenizer, createIsFn } from 'core-parser'
 
+import { removeQuotes } from '~/src/pkg/strings'
 import { tokenizer, Kind } from './lexer'
 
 const isConstant = createIsFn(Kind.CONSTANT)
@@ -33,7 +34,7 @@ class TableParser {
       }
 
       if (isConstant(tok)) {
-        this.headers.push(tok.value.trim())
+        this.headers.push(removeQuotes(tok.value.trim()))
       }
     }
 
@@ -58,7 +59,7 @@ class TableParser {
         data = {}
         idx = 0
       } else if (isConstant(tok)) {
-        data[this.headers[idx]] = tok.value.trim()
+        data[this.headers[idx]] = removeQuotes(tok.value.trim())
       } else if (isSplit(tok)) {
         idx++
       }

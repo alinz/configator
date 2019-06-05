@@ -15,17 +15,17 @@ describe('markdown table parser', () => {
       {
         given: createReadStream(`${__dirname}/samples/sample1.csv`),
         expected: {
-          headers: ['header1', 'header 2', '"header,3"'],
+          headers: ['header1', 'header 2', 'header,3'],
           data: [
             {
               header1: '1',
               'header 2': '2',
-              '"header,3"': '3',
+              'header,3': '3',
             },
             {
               header1: '2',
-              'header 2': '"3,5"',
-              '"header,3"': '4',
+              'header 2': '3,5',
+              'header,3': '4',
             },
           ],
         },
