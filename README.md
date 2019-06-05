@@ -53,6 +53,16 @@ compile `CONFIG.md` file and output as `config.ts`
 configator -i ./docs/CONFIG.md -o ./src/config.ts --typescript
 ```
 
+# Markdown Table Definition
+
+At the moment, there are `boolean`,`number`,`function`,`string`,`range` and `multi` which are supported.
+
+
+`range` is a specific type which handles `1..10` and `apple,orange,banana`.
+
+`multi` is the same as `apple,orange,banana` but one or more item can be pass and set as `range` only one item can be set.
+
+
 # Toolchain
 
 `configator` comes with couple of toolchain. As far as Markdown table goes, editing that table is painful. for that reason, `configator` comes with `Markdown Table` to `CSV` file convertor. The `CSV` file can be open easily by any data sheet software and can be modified easily. Once the file is saved back to csv file, `configator` can convert back to `Markdown Table` file.
