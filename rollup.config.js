@@ -1,6 +1,6 @@
 import typescript from 'rollup-plugin-typescript2'
 import { sizeSnapshot } from 'rollup-plugin-size-snapshot'
-import { terser } from 'rollup-plugin-terser'
+// import { terser } from 'rollup-plugin-terser'
 
 const onwarn = (warning) => {
   // Skip certain warnings
