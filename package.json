@@ -15,7 +15,7 @@
     "dist/**"
   ],
   "scripts": {
-    "test": "jest table-to-typescript --watch",
+    "test": "jest table-to-typescript",
     "clean": "rm -rf dist; rm -rf .rpt2_cache",
     "build": "yarn clean; rollup -c"
   },

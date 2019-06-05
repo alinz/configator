@@ -1,5 +1,9 @@
 import * as ts from 'typescript'
 
+import { removeQuotes } from '~/src/pkg/strings'
+
+import { ConfigItemType, RangeValue, RangeNumber } from '../types'
+
 // creates -> mapId['key'] = valId
 export const createMapSetter = (mapId: string, key: string, valId: string) => {
   return ts.createExpressionStatement(
@@ -17,24 +21,73 @@ export const createReturnBlock = (id: string) => {
 }
 
 // creates -> (val: any) => { base['a.b.c'] = val; return parent; }
-export const createSetterFunc = (mapId: string, key: string, returnId: string) => {
+export const createSetterFunc = (mapId: string, key: string, returnId: string, type?: ConfigItemType, extra?: RangeValue | RangeNumber) => {
+  let typeValue
+  let dotDotDot
+  let block = ts.createBlock([createMapSetter(mapId, key, 'val'), createReturnBlock(returnId)], true)
+
+  switch (type) {
+    case 'boolean':
+      typeValue = ts.createKeywordTypeNode(ts.SyntaxKind.BooleanKeyword)
+      break
+    case 'number':
+      typeValue = ts.createKeywordTypeNode(ts.SyntaxKind.NumberKeyword)
+      break
+    case 'function':
+      typeValue = ts.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword)
+      break
+    case 'string':
+      typeValue = ts.createKeywordTypeNode(ts.SyntaxKind.StringKeyword)
+      break
+    case 'range':
+      switch (extra.type) {
+        case 'number':
+          typeValue = ts.createKeywordTypeNode(ts.SyntaxKind.NumberKeyword)
+          break
+        case 'single':
+          typeValue = ts.createUnionTypeNode(extra.values.map((value) => ts.createLiteralTypeNode(ts.createStringLiteral(value))))
+          break
+        case 'multiple':
+          typeValue = ts.createUnionTypeNode(extra.values.map((value) => ts.createLiteralTypeNode(ts.createStringLiteral(value))))
+
+          break
+      }
+      break
+    case 'multi':
+      if (extra.type !== 'multiple') {
+        throw new Error('failed to parse multiple')
+      }
+
+      typeValue = ts.createArrayTypeNode(
+        ts.createParenthesizedType(ts.createUnionTypeNode(extra.values.map((value) => ts.createLiteralTypeNode(ts.createStringLiteral(value))))),
+      )
+
+      dotDotDot = ts.createToken(ts.SyntaxKind.DotDotDotToken)
+      block = ts.createBlock(
+        [
+          ts.createExpressionStatement(
+            ts.createBinary(
+              ts.createElementAccess(ts.createIdentifier(mapId), ts.createStringLiteral(key)),
+              ts.createToken(ts.SyntaxKind.FirstAssignment),
+              ts.createCall(ts.createPropertyAccess(ts.createIdentifier('val'), ts.createIdentifier('join')), undefined, [
+                ts.createStringLiteral(','),
+              ]),
+            ),
+          ),
+          ts.createReturn(ts.createIdentifier(returnId)),
+        ],
+        true,
+      )
+      break
+  }
+
   return ts.createArrowFunction(
     undefined,
     undefined,
-    [
-      ts.createParameter(
-        undefined,
-        undefined,
-        undefined,
-        ts.createIdentifier('val'),
-        undefined,
-        ts.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword),
-        undefined,
-      ),
-    ],
+    [ts.createParameter(undefined, undefined, dotDotDot, ts.createIdentifier('val'), undefined, typeValue, undefined)],
     undefined,
     ts.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
-    ts.createBlock([createMapSetter(mapId, key, 'val'), createReturnBlock(returnId)], true),
+    block,
   )
 }
 
@@ -89,7 +142,9 @@ export const createObjectUpdate = (obj: any, list: ts.ObjectLiteralElementLike[]
     list.push(
       ts.createPropertyAssignment(
         ts.createIdentifier(key),
-        isLeaf(val) ? createSetterFunc('conf', val.property, 'update') : ts.createObjectLiteral(createObjectUpdate(val, []), false),
+        isLeaf(val)
+          ? createSetterFunc('conf', val.property, 'update', val.type, val.range)
+          : ts.createObjectLiteral(createObjectUpdate(val, []), false),
       ),
     )
   })

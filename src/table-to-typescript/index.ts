@@ -4,28 +4,9 @@ import { Readable } from 'stream'
 import { asyncWrite } from '~/src/pkg/io'
 import { removeQuotes } from '~/src/pkg/strings'
 import { parse as tableParse } from '~/src/table-reader'
+
 import * as ast from './ast'
-
-interface RangeNumber {
-  type: 'number'
-  min: number
-  max: number
-}
-
-interface RangeValue {
-  type: 'single' | 'multiple'
-  values: string[]
-}
-
-type ConfigItemType = 'boolean' | 'number' | 'function' | 'string' | 'range' | 'multi'
-
-interface ConfigItem {
-  property: string
-  type: ConfigItemType
-  range: RangeNumber | RangeValue | null
-  default: any
-  description: string
-}
+import { ConfigItem, RangeNumber, RangeValue, ConfigItemType } from './types'
 
 const isTypeCorrect = (type: string): boolean => {
   return ['boolean', 'number', 'function', 'string', 'range', 'multi'].indexOf(type) !== -1
@@ -40,7 +21,7 @@ const parseRange = (value: string): RangeNumber | RangeValue => {
       max: Number(max),
     }
   } else {
-    const values = value.split(',')
+    const values = removeQuotes(value).split(',')
     return {
       type: 'single',
       values,

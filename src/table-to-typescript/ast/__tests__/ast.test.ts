@@ -18,10 +18,10 @@ describe('ast test', () => {
   })
 
   test('createSetterFunc', () => {
-    const value = ast.createSetterFunc('a', 'b', 'cool')
+    const value = ast.createSetterFunc('a', 'b', 'cool', 'boolean')
 
     const expected = `
-(val: any) => {
+(val: boolean) => {
     a["b"] = val;
     return cool;
 } 
@@ -99,14 +99,14 @@ describe('ast test', () => {
 config = (conf: {
     [key: string]: any;
 }) => {
-    const update = { a: { b: { c: (val: any) => {
+    const update = { a: { b: { c: (val: number) => {
                     conf["a.b.c"] = val;
                     return update;
-                }, d: (val: any) => {
+                }, d: (val: "a" | "b" | "c") => {
                     conf["a.b.d"] = val;
                     return update;
-                }, e: (val: any) => {
-                    conf["a.b.e"] = val;
+                }, e: (...val: ("a" | "b" | "c")[]) => {
+                    conf["a.b.e"] = val.join(",");
                     return update;
                 } } } };
     return update;
