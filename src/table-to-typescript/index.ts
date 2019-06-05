@@ -73,6 +73,10 @@ export const phase1 = async (input: Readable) => {
             configItem.default = Number(item.Default)
           }
           break
+        case 'function':
+          configItem.default = undefined
+          configItem.range = null
+          break
         case 'string':
           configItem.default = item.Default
           configItem.range = null

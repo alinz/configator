@@ -34,7 +34,7 @@ export const createSetterFunc = (mapId: string, key: string, returnId: string, t
       typeValue = ts.createKeywordTypeNode(ts.SyntaxKind.NumberKeyword)
       break
     case 'function':
-      typeValue = ts.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword)
+      typeValue = ts.createTypeReferenceNode(ts.createIdentifier('Function'), undefined)
       break
     case 'string':
       typeValue = ts.createKeywordTypeNode(ts.SyntaxKind.StringKeyword)
