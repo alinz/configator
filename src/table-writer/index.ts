@@ -58,12 +58,16 @@ export const write = async (items: DataInput, output: Writable) => {
     return lengths
   }, {})
 
+  console.log(lengths)
+
   // go through each column of data and see if column is longer
   data.forEach((item) => {
     Object.keys(item).forEach((header) => {
+      console.log(header, lengths[header], item[header], item[header].length)
       if (lengths[header] < item[header].length) {
         lengths[header] = item[header].length
       }
+      console.log(lengths[header])
     })
   })
 
@@ -75,6 +79,7 @@ export const write = async (items: DataInput, output: Writable) => {
         return item
       }, {}),
       lengths,
+      1,
     ),
     output,
   )
