@@ -7,12 +7,15 @@
   ],
   "main": "./dist/index.js",
   "module": "./dist/index.esm.js",
-  "bin": "./dist/index.js",
+  "bin": {
+    "configator": "./bin/index.js"
+  },
   "sideEffects": false,
   "typings": "./dist",
   "files": [
     "package.json",
-    "dist/**"
+    "dist/**",
+    "bin/**"
   ],
   "scripts": {
     "test": "jest table-to-typescript",
