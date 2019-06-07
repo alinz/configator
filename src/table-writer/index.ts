@@ -41,7 +41,7 @@ const tableRow = (headers: string[], data: { [key: string]: string }, lengths: {
 
   for (const header of headers) {
     columns.push('|')
-    columns.push(appendSpaceAfterValue(data[header], lengths[header], extra))
+    columns.push(appendSpaceAfterValue(data[header] || '', lengths[header], extra))
   }
   columns.push('|')
 
@@ -58,16 +58,12 @@ export const write = async (items: DataInput, output: Writable) => {
     return lengths
   }, {})
 
-  console.log(lengths)
-
   // go through each column of data and see if column is longer
   data.forEach((item) => {
     Object.keys(item).forEach((header) => {
-      console.log(header, lengths[header], item[header], item[header].length)
       if (lengths[header] < item[header].length) {
         lengths[header] = item[header].length
       }
-      console.log(lengths[header])
     })
   })
 

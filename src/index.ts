@@ -50,11 +50,11 @@ const run = async () => {
 }
 
 const main = async () => {
-  try {
-    await run()
-  } catch (e) {
-    console.error(`Error: ${e.message}`)
-  }
+  // try {
+  await run()
+  // } catch (e) {
+  // console.error(`Error: ${e.message}`)
+  // }
 }
 
 main()

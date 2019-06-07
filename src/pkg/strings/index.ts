@@ -1,3 +1,3 @@
 export const removeQuotes = (value: string) => {
-  return value.replace(/^"(.+)"$/, '$1')
+  return value ? value.replace(/^"(.+)"$/, '$1') : value
 }

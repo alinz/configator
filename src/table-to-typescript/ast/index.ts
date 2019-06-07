@@ -133,7 +133,7 @@ export const createExport = (declaration: ts.VariableDeclaration) => {
 }
 
 export const isLeaf = (obj: any): boolean => {
-  return Object.keys(obj).length == 5 && 'property' in obj && 'description' in obj && 'type' in obj && 'range' in obj && 'default' in obj
+  return 'property' in obj && 'type' in obj
 }
 
 export const createObjectUpdate = (obj: any, list: ts.ObjectLiteralElementLike[] = []): ts.ObjectLiteralElementLike[] => {

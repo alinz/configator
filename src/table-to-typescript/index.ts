@@ -97,7 +97,7 @@ export const generateBaseConfig = (base: { [key: string]: ConfigItem }) => {
     if (base[key].default !== '') {
       baseConfig[key] = typeof base[key].default === 'string' ? removeQuotes(base[key].default) : base[key].default
     } else {
-      baseConfig[key].default = undefined
+      baseConfig[key] = undefined
     }
     return baseConfig
   }, {})
