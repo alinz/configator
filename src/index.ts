@@ -15,7 +15,7 @@ const onlyOne = (...args: boolean[]) => {
   return count === 1
 }
 
-const main = async () => {
+const run = async () => {
   program
     .version('0.1.0')
     .option('-i --input <input>', 'input file')
@@ -46,6 +46,14 @@ const main = async () => {
   // the last line should never happen
   else {
     throw new Error('this should not happen')
+  }
+}
+
+const main = async () => {
+  try {
+    await run()
+  } catch (e) {
+    console.error(`Error: ${e.message}`)
   }
 }
 
