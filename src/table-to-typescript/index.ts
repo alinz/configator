@@ -21,7 +21,9 @@ const parseRange = (value: string): RangeNumber | RangeValue => {
       max: Number(max),
     }
   } else {
-    const values = removeQuotes(value).split(',')
+    const values = removeQuotes(value)
+      .split(',')
+      .map((value) => value.trim())
     return {
       type: 'single',
       values,
@@ -62,7 +64,12 @@ export const phase1 = async (input: Readable) => {
           }
           break
         case 'multi':
-          configItem.range = { type: 'multiple', values: removeQuotes(item.Range).split(',') }
+          configItem.range = {
+            type: 'multiple',
+            values: removeQuotes(item.Range)
+              .split(',')
+              .map((value) => value.trim()),
+          }
           configItem.default = removeQuotes(item.Default)
           break
         case 'boolean':
