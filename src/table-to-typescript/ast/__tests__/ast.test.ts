@@ -21,7 +21,7 @@ describe('ast test', () => {
     const value = ast.createSetterFunc('a', 'b', 'cool', 'boolean')
 
     const expected = `
-(val: boolean) => {
+(val: boolean): Updater => {
     a["b"] = val;
     return cool;
 } 
@@ -99,13 +99,13 @@ describe('ast test', () => {
 config = (conf: {
     [key: string]: any;
 }) => {
-    const update = { a: { b: { c: (val: number) => {
+    const update = { a: { b: { c: (val: number): Updater => {
                     conf["a.b.c"] = val;
                     return update;
-                }, d: (val: "a" | "b" | "c") => {
+                }, d: (val: "a" | "b" | "c"): Updater => {
                     conf["a.b.d"] = val;
                     return update;
-                }, e: (...val: ("a" | "b" | "c")[]) => {
+                }, e: (...val: ("a" | "b" | "c")[]): Updater => {
                     conf["a.b.e"] = val.join(",");
                     return update;
                 } } } };
@@ -134,6 +134,63 @@ config = (conf: {
       },
     }
 
-    // const value = ast.createSource(obj)
+    const original = {
+      'a.b.c': 5,
+      'a.b.d': 'b',
+      'a.b.e': 'b,a',
+    }
+
+    const expected = `
+interface Updater {
+    a: {
+        b: {
+            c: (val: number) => Updater;
+            d: (val: "a" | "b" | "c") => Updater;
+            e: (...val: ("a" | "b" | "c")[]) => Updater;
+        };
+    };
+}
+export const conf = { "a.b.c": 5, "a.b.d": "b", "a.b.e": "b,a" };
+export const config = (conf: {
+    [key: string]: any;
+}) => {
+    const update = { a: { b: { c: (val: number): Updater => {
+                    conf["a.b.c"] = val;
+                    return update;
+                }, d: (val: "a" | "b" | "c"): Updater => {
+                    conf["a.b.d"] = val;
+                    return update;
+                }, e: (...val: ("a" | "b" | "c")[]): Updater => {
+                    conf["a.b.e"] = val.join(",");
+                    return update;
+                } } } };
+    return update;
+};`.trim()
+
+    const value = ast.createSource(obj, original)
+    expect(ast.print(value).trim()).toBe(expected)
+  })
+
+  test('createUpdaterInterface', () => {
+    const obj = {
+      a: {
+        b: {
+          c: { property: 'a.b.c', description: 'awesome value1', type: 'range', range: { type: 'number', min: 1, max: 10 }, default: 5 },
+        },
+      },
+    }
+
+    const expected = `
+interface Updater {
+    a: {
+        b: {
+            c: (val: number) => Updater;
+        };
+    };
+}
+`.trim()
+
+    const value = ast.createUpdaterInterface(obj)
+    expect(output(value)).toBe(expected)
   })
 })

@@ -20,7 +20,7 @@ export const createReturnBlock = (id: string) => {
   return ts.createReturn(ts.createIdentifier(id))
 }
 
-// creates -> (val: any) => { base['a.b.c'] = val; return parent; }
+// creates -> (val: any): Updater => { base['a.b.c'] = val; return parent; }
 export const createSetterFunc = (mapId: string, key: string, returnId: string, type?: ConfigItemType, extra?: RangeValue | RangeNumber) => {
   let typeValue
   let dotDotDot
@@ -85,7 +85,7 @@ export const createSetterFunc = (mapId: string, key: string, returnId: string, t
     undefined,
     undefined,
     [ts.createParameter(undefined, undefined, dotDotDot, ts.createIdentifier('val'), undefined, typeValue, undefined)],
-    undefined,
+    ts.createTypeReferenceNode(ts.createIdentifier('Updater'), undefined),
     ts.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
     block,
   )
@@ -215,8 +215,84 @@ export const createConfig = (obj: any) => {
   )
 }
 
+// creates -> (val: number) => Updater
+export const createFuncType = (type: ConfigItemType, extra?: RangeValue | RangeNumber) => {
+  let typeValue
+  let dotDotDot
+
+  switch (type) {
+    case 'boolean':
+      typeValue = ts.createKeywordTypeNode(ts.SyntaxKind.BooleanKeyword)
+      break
+    case 'number':
+      typeValue = ts.createKeywordTypeNode(ts.SyntaxKind.NumberKeyword)
+      break
+    case 'function':
+      typeValue = ts.createTypeReferenceNode(ts.createIdentifier('Function'), undefined)
+      break
+    case 'string':
+      typeValue = ts.createKeywordTypeNode(ts.SyntaxKind.StringKeyword)
+      break
+    case 'range':
+      switch (extra.type) {
+        case 'number':
+          typeValue = ts.createKeywordTypeNode(ts.SyntaxKind.NumberKeyword)
+          break
+        case 'single':
+          typeValue = ts.createUnionTypeNode(extra.values.map((value) => ts.createLiteralTypeNode(ts.createStringLiteral(value))))
+          break
+        case 'multiple':
+          typeValue = ts.createUnionTypeNode(extra.values.map((value) => ts.createLiteralTypeNode(ts.createStringLiteral(value))))
+
+          break
+      }
+      break
+    case 'multi':
+      if (extra.type !== 'multiple') {
+        throw new Error('failed to parse multiple')
+      }
+
+      typeValue = ts.createArrayTypeNode(
+        ts.createParenthesizedType(ts.createUnionTypeNode(extra.values.map((value) => ts.createLiteralTypeNode(ts.createStringLiteral(value))))),
+      )
+
+      dotDotDot = ts.createToken(ts.SyntaxKind.DotDotDotToken)
+      break
+  }
+
+  return ts.createFunctionTypeNode(
+    undefined,
+    [ts.createParameter(undefined, undefined, dotDotDot, ts.createIdentifier('val'), undefined, typeValue, undefined)],
+    ts.createTypeReferenceNode(ts.createIdentifier('Updater'), undefined),
+  )
+}
+
+const updaterInterfaceObj = (obj: any, list: ts.TypeElement[] = []): ts.TypeElement[] => {
+  Object.keys(obj).forEach((key) => {
+    const val = obj[key]
+    list.push(
+      isLeaf(val)
+        ? ts.createPropertySignature(undefined, ts.createIdentifier(key), undefined, createFuncType(val.type, val.range), undefined)
+        : ts.createPropertySignature(
+            undefined,
+            ts.createIdentifier(key),
+            undefined,
+            ts.createTypeLiteralNode(updaterInterfaceObj(val, [])),
+            undefined,
+          ),
+    )
+  })
+
+  return list
+}
+
+export const createUpdaterInterface = (obj: any) => {
+  return ts.createInterfaceDeclaration(undefined, undefined, ts.createIdentifier('Updater'), undefined, undefined, updaterInterfaceObj(obj))
+}
+
 export const createSource = (obj: any, original: any) => {
   return ts.updateSourceFileNode(ts.createSourceFile('temporary.tsx', '', ts.ScriptTarget.Latest), [
+    createUpdaterInterface(obj),
     createExport(createFlatMap('conf', original)),
     createExport(createConfig(obj)),
   ])
