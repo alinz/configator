@@ -287,7 +287,14 @@ const updaterInterfaceObj = (obj: any, list: ts.TypeElement[] = []): ts.TypeElem
 }
 
 export const createUpdaterInterface = (obj: any) => {
-  return ts.createInterfaceDeclaration(undefined, undefined, ts.createIdentifier('Updater'), undefined, undefined, updaterInterfaceObj(obj))
+  return ts.createInterfaceDeclaration(
+    undefined,
+    [ts.createModifier(ts.SyntaxKind.ExportKeyword)],
+    ts.createIdentifier('Updater'),
+    undefined,
+    undefined,
+    updaterInterfaceObj(obj),
+  )
 }
 
 export const createSource = (obj: any, original: any) => {

@@ -141,7 +141,7 @@ config = (conf: {
     }
 
     const expected = `
-interface Updater {
+export interface Updater {
     a: {
         b: {
             c: (val: number) => Updater;
@@ -181,7 +181,7 @@ export const config = (conf: {
     }
 
     const expected = `
-interface Updater {
+export interface Updater {
     a: {
         b: {
             c: (val: number) => Updater;
